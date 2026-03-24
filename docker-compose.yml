@@ -1,0 +1,49 @@
+﻿services:
+  peliculas-app:
+    build: ../peliculas-backend
+    ports: ["8080:8080"]
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://peliculas-db:5432/peliculas_db
+      SPRING_DATASOURCE_USERNAME: user_peliculas
+      SPRING_DATASOURCE_PASSWORD: pass_peliculas    
+    depends_on:
+      - peliculas-db
+      
+
+  peliculas-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: peliculas_db
+      POSTGRES_USER: user_peliculas
+      POSTGRES_PASSWORD: pass_peliculas
+    volumes:
+      - peliculas-data:/var/lib/postgresql/data
+
+  rating-app:
+    build: .
+    ports: ["8084:8084"]
+    environment:
+      SERVER_PORT: 8084
+      SPRING_DATASOURCE_URL: jdbc:postgresql://rating-db:5432/rating_db
+      SPRING_DATASOURCE_USERNAME: user_rating
+      SPRING_DATASOURCE_PASSWORD: pass_rating    
+      PELICULAS_BASE_URL: http://peliculas-app:8080
+    depends_on:
+      - rating-db
+      - peliculas-app
+
+  rating-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: rating_db
+      POSTGRES_USER: user_rating
+      POSTGRES_PASSWORD: pass_rating
+    volumes:
+      - rating-data:/var/lib/postgresql/data
+
+ 
+
+volumes:
+  peliculas-data:
+  rating-data:
+
