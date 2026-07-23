@@ -174,6 +174,47 @@ class RatingControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/ratings/{id} - Retorna rating por ID (200 OK)")
+    void testObtenerPorIdExitoso() throws Exception {
+        RatingDTO dto = new RatingDTO();
+        dto.setId(1L);
+        dto.setUsuarioId("user1");
+        dto.setPeliculaId(10);
+        dto.setEstrellas(5);
+
+        when(ratingService.obtenerPorId(1L)).thenReturn(dto);
+
+        mockMvc.perform(get("/api/ratings/{id}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.usuarioId").value("user1"));
+    }
+
+    @Test
+    @DisplayName("GET /api/ratings/{id} - Retorna 404 NOT FOUND si no existe")
+    void testObtenerPorIdNoEncontrado() throws Exception {
+        when(ratingService.obtenerPorId(99L))
+                .thenThrow(new ResourceNotFoundException("No se encontró el rating con id 99"));
+
+        mockMvc.perform(get("/api/ratings/{id}", 99L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("No se encontró el rating con id 99"));
+    }
+
+    @Test
+    @DisplayName("Manejo de IllegalArgumentException regresa 400 Bad Request")
+    void testIllegalArgumentException() throws Exception {
+        when(ratingService.obtenerPorId(999L))
+                .thenThrow(new IllegalArgumentException("Argumento inválido"));
+
+        mockMvc.perform(get("/api/ratings/{id}", 999L))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Argumento inválido"));
+    }
+
+    @Test
     @DisplayName("DELETE /api/ratings/{id} - Elimina correctamente (204 NO_CONTENT)")
     void testEliminarExitoso() throws Exception {
         // Arrange

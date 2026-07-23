@@ -153,6 +153,56 @@ class RatingServiceTest {
     }
 
     @Test
+    @DisplayName("Obtener voto usuario existente")
+    void testObtenerVotoUsuarioExitoso() {
+        Rating rating = new Rating();
+        rating.setId(1L);
+        rating.setUsuarioId("user1");
+        rating.setPeliculaId(10);
+        rating.setEstrellas(5);
+
+        when(ratingRepository.findByUsuarioIdAndPeliculaId("user1", 10))
+                .thenReturn(Optional.of(rating));
+
+        RatingDTO result = ratingService.obtenerVotoUsuario(10, "user1");
+        assertNotNull(result);
+        assertEquals("user1", result.getUsuarioId());
+    }
+
+    @Test
+    @DisplayName("Obtener voto usuario inexistente lanza ResourceNotFoundException")
+    void testObtenerVotoUsuarioInexistente() {
+        when(ratingRepository.findByUsuarioIdAndPeliculaId("user1", 10))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> ratingService.obtenerVotoUsuario(10, "user1"));
+    }
+
+    @Test
+    @DisplayName("Obtener rating por ID exitoso")
+    void testObtenerPorIdExitoso() {
+        Rating rating = new Rating();
+        rating.setId(1L);
+        rating.setUsuarioId("user1");
+        rating.setPeliculaId(10);
+        rating.setEstrellas(5);
+
+        when(ratingRepository.findById(1L)).thenReturn(Optional.of(rating));
+
+        RatingDTO result = ratingService.obtenerPorId(1L);
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+    }
+
+    @Test
+    @DisplayName("Obtener rating por ID inexistente lanza ResourceNotFoundException")
+    void testObtenerPorIdInexistente() {
+        when(ratingRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> ratingService.obtenerPorId(99L));
+    }
+
+    @Test
     @DisplayName("Eliminar rating existente")
     void testEliminarExitoso() {
         // Arrange
