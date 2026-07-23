@@ -32,6 +32,47 @@ jobs:
       - name: Build and Run Tests with Coverage Check
         run: ./mvnw clean verify
 
+      - name: Publish Coverage Summary in GitHub Actions
+        if: always()
+        run: |
+          if [ -f "target/site/jacoco/jacoco.xml" ]; then
+            python3 -c "
+          import xml.etree.ElementTree as ET
+          import os
+
+          tree = ET.parse('target/site/jacoco/jacoco.xml')
+          root = tree.getroot()
+          counters = {c.get('type'): c for c in root.findall('counter')}
+          
+          if 'LINE' in counters:
+              line_c = counters['LINE']
+              missed = int(line_c.get('missed'))
+              covered = int(line_c.get('covered'))
+              total = missed + covered
+              pct = (covered / total * 100) if total > 0 else 0
+              status = '🟢 PASSED (Aprobado)' if pct >= 90 else '🔴 FAILED (Rechazado)'
+              
+              summary = f'''## 📊 Reporte de Cobertura de Código (JaCoCo)
+
+          | Métrica | Cobertura Actual | Criterio de Aceptación | Estado |
+          | --- | --- | --- | --- |
+          | **Líneas de Código** | **{pct:.2f}%** ({covered}/{total} líneas) | **>= 90.00%** | **{status}** |
+          '''
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+                  f.write(summary)
+          "
+          fi
+
+      - name: Jacoco PR Commenter
+        if: always() && github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.7.1
+        with:
+          paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 90
+          min-coverage-changed-files: 90
+          title: '📊 Jacoco Code Coverage Report'
+
       - name: Upload JaCoCo Coverage Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -39,3 +80,4 @@ jobs:
           name: jacoco-coverage-report
           path: target/site/jacoco/
           retention-days: 5
+
